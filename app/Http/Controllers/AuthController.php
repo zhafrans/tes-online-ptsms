@@ -2,40 +2,41 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\LoginRequest;
+use App\Models\User;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\User;
 
 class AuthController extends Controller
 {
-    public function login(Request $request)
+    use ApiResponse;
+
+    public function login(LoginRequest $request)
     {
-        $credentials = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+        $credentials = $request->validated();
 
         if (Auth::attempt($credentials)) {
             $user = User::where('email', $request->email)->first();
             $token = $user->createToken('auth_token')->plainTextToken;
 
-            return response()->json([
+            $data = [
                 'user' => [
                     'name' => $user->name,
                     'email' => $user->email,
                 ],
                 'access_token' => $token,
                 'token_type' => 'Bearer',
-            ]);
+            ];
+
+            return $this->sendResponse($data, 'Login successful');
         }
 
-        return response()->json([
-            'message' => 'Invalid credentials'
-        ], 401);
+        return $this->sendError('Invalid credentials', [], 401);
     }
 
     public function me(Request $request)
     {
-        return $request->user();
+        return $this->sendResponse($request->user(), 'User profile fetched successfully');
     }
 }

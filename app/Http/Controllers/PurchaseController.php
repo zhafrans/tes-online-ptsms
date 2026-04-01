@@ -2,28 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
-use Illuminate\Support\Facades\DB;
-use App\Models\Purchase;
+use App\Http\Requests\StorePurchaseRequest;
 use App\Models\Product;
+use App\Models\Purchase;
+use App\Models\PurchaseItem;
+use App\Traits\ApiResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PurchaseController extends Controller
 {
+    use ApiResponse;
+
     public function index()
     {
         $purchases = Purchase::with('items.product')->paginate(10);
-        return response()->json($purchases);
+        return $this->sendResponse($purchases, 'Purchases list fetched successfully');
     }
 
-    public function store(Request $request)
+    public function store(StorePurchaseRequest $request)
     {
-        $validated = $request->validate([
-            'date' => 'required|date',
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.qty' => 'required|integer|min:1',
-        ]);
+        $validated = $request->validated();
 
         try {
             DB::beginTransaction();
@@ -53,21 +52,21 @@ class PurchaseController extends Controller
 
             foreach ($itemsToInsert as $itemData) {
                 $itemData['purchase_id'] = $purchase->id;
-                \App\Models\PurchaseItem::create($itemData);
+                PurchaseItem::create($itemData);
             }
 
             DB::commit();
 
-            return response()->json($purchase->load('items.product'), 201);
+            return $this->sendResponse($purchase->load('items.product'), 'Purchase created successfully', 201);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Failed to process purchase transaction', 'error' => $e->getMessage()], 500);
+            return $this->sendError('Failed to process purchase', [$e->getMessage()], 500);
         }
     }
 
     public function show(string $id)
     {
         $purchase = Purchase::with('items.product')->findOrFail($id);
-        return response()->json($purchase);
+        return $this->sendResponse($purchase, 'Purchase details fetched successfully');
     }
 }

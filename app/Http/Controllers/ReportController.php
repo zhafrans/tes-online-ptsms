@@ -2,22 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ReportPurchaseRequest;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
-    public function index(Request $request)
-    {
-        $request->validate([
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'product_id' => 'nullable|integer|exists:products,id'
-        ]);
+    use ApiResponse;
 
-        $startDate = $request->start_date;
-        $endDate = $request->end_date;
-        $productId = $request->product_id;
+    public function index(ReportPurchaseRequest $request)
+    {
+        $validated = $request->validated();
+
+        $startDate = $validated['start_date'];
+        $endDate = $validated['end_date'];
+        $productId = $validated['product_id'] ?? null;
 
         $query = DB::table('purchases as p')
             ->join('purchase_items as pi', 'p.id', '=', 'pi.purchase_id')
@@ -38,6 +38,6 @@ class ReportController extends Controller
 
         $results = $query->get();
 
-        return response()->json($results);
+        return $this->sendResponse($results, 'Report generated successfully');
     }
 }

@@ -2,49 +2,46 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreProductRequest;
+use App\Http\Requests\UpdateProductRequest;
+use App\Models\Product;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
+    use ApiResponse;
+
     public function index()
     {
-        return response()->json(\App\Models\Product::paginate(10));
+        $products = Product::paginate(10);
+        return $this->sendResponse($products, 'Products list fetched successfully');
     }
 
-    public function store(Request $request)
+    public function store(StoreProductRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'price' => 'required|numeric|min:0',
-        ]);
-
-        $product = \App\Models\Product::create($validated);
-        return response()->json($product, 201);
+        $product = Product::create($request->validated());
+        return $this->sendResponse($product, 'Product created successfully', 201);
     }
 
     public function show(string $id)
     {
-        return response()->json(\App\Models\Product::findOrFail($id));
+        $product = Product::findOrFail($id);
+        return $this->sendResponse($product, 'Product details fetched successfully');
     }
 
-    public function update(Request $request, string $id)
+    public function update(UpdateProductRequest $request, string $id)
     {
-        $product = \App\Models\Product::findOrFail($id);
-
-        $validated = $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'price' => 'sometimes|numeric|min:0',
-        ]);
-
-        $product->update($validated);
-        return response()->json($product);
+        $product = Product::findOrFail($id);
+        $product->update($request->validated());
+        return $this->sendResponse($product, 'Product updated successfully');
     }
 
     public function destroy(string $id)
     {
-        $product = \App\Models\Product::findOrFail($id);
+        $product = Product::findOrFail($id);
         $product->delete();
         
-        return response()->json(null, 204);
+        return $this->sendResponse(null, 'Product deleted successfully', 200);
     }
 }
