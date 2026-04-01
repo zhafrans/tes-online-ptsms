@@ -26,8 +26,6 @@ Created by: Programmer Candidate (Test Online)
     php artisan serve
     ```
 
-## Postman Collection
-The file `test_online_PTSMS.postman_collection.json` is included in the root directory. You can import this directly into Postman. Make sure to define `base_url` as your host (defaults to http://localhost:8000) and `access_token` after authenticating.
 
 ### Test User Credentials
 - **Email:** test@example.com
